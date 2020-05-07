@@ -1,5 +1,6 @@
 import pygame
 import numpy as np
+import random
 import math
 from copy import deepcopy
 import time
@@ -16,10 +17,10 @@ def init_board():
     return board
 
 def available_actions(board):
-    actions = set()
+    actions = []
     for col in range(COL_SIZE):
         if board[ROW_SIZE-1][col] == EMPTY:
-            actions.add(col)
+            actions.append(col)
     return actions
 
 def gameover(board):
@@ -127,18 +128,18 @@ def minimax (board, depth, alpha, beta, maximizingPlayer):
 
     if not finished is None: #If someone won
         if finished == AI_PLAYER:
-            return (None, math.inf)
+            return (None, 100000000000000)
         else:
-            return (None, -math.inf)
+            return (None, -100000000000000)
     if depth == 0: # If the depth for depth limit minimax reaches 0
         return (None, score_position(board, AI_PLAYER))
     actions = available_actions(board)
-    if len(actions) == 0: # If the board is completely full and it is a tie
+    if len(actions) == 0: # If the board is completely full and it is a tie        
         return (None, 0)
 
     if maximizingPlayer:
-        maxEvaluation = -10000000
-        bestAction = None
+        maxEvaluation = -math.inf
+        bestAction = random.choice(actions)
         for a in actions:
             board_copy = make_move(board, a, AI_PLAYER)
             evaluation = minimax(board_copy, depth-1, alpha, beta, False)[1]
@@ -150,8 +151,8 @@ def minimax (board, depth, alpha, beta, maximizingPlayer):
                 break
         return (bestAction, maxEvaluation)
     else:
-        minEvaluation = 10000000
-        bestAction = None
+        minEvaluation = math.inf
+        bestAction = random.choice(actions)
         for a in actions:
             board_copy = make_move(board, a, HUMAN_PLAYER)
             evaluation = minimax(board_copy, depth-1, alpha, beta, True)[1]
@@ -164,7 +165,7 @@ def minimax (board, depth, alpha, beta, maximizingPlayer):
         return (bestAction, minEvaluation)
 
 RED_PLAYER = (255, 0, 0)
-YELLOW_PLAYER = (255, 255, 0)
+YELLOW_PLAYER = (0, 153, 0)
 BACKGROUND_COLOR = (255, 255, 255)
 BOARD_COLOR = (0, 0, 255)
 SQUARE_SIZE = 100
@@ -195,20 +196,13 @@ def draw_board(board):
 def play():
     #Initialize the board and pygame
     board = init_board()
-    turn = HUMAN_PLAYER
+    turn = AI_PLAYER
     print (board)
 
     while True:
         # Check for winner
-        winner = gameover(board)
-        if not winner is None:
-            if winner == HUMAN_PLAYER:
-                text = myfont.render('PLAYER 1 WINS!', False, RED_PLAYER)
-            else:
-                text = myfont.render('PLAYER 2 WINS!', False, YELLOW_PLAYER)
-            win.blit(text, (40,10))
-            continue
         draw_board(board)
+        game_over = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return
@@ -227,19 +221,22 @@ def play():
                     board = make_move(board, col, turn)
                     turn = AI_PLAYER
 
-                    if not gameover(board) is None:
+                    if gameover(board) == HUMAN_PLAYER:
                         text = myfont.render('PLAYER 1 WINS!', True, RED_PLAYER)
-                        win.blit(text, (40,10))
+                        win.blit(text, (70,10))
+                        game_over = True
                         break
                     draw_board(board)
                     print (board[::-1])
 
+        if game_over:
+            break
         if turn == AI_PLAYER:
             col, score = minimax(board, 5, -math.inf, math.inf, True)
             board = make_move(board, col, turn)
             turn = HUMAN_PLAYER
 
-            if not gameover(board) is None:
+            if gameover(board) == AI_PLAYER:
                 text = myfont.render('PLAYER 2 WINS!', True, YELLOW_PLAYER)
                 win.blit(text, (70,10))
                 break
