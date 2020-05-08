@@ -2,6 +2,7 @@ import pygame
 import numpy as np
 import random
 import math
+import sys
 from copy import deepcopy
 import time
 
@@ -128,9 +129,9 @@ def minimax (board, depth, alpha, beta, maximizingPlayer):
 
     if not finished is None: #If someone won
         if finished == AI_PLAYER:
-            return (None, 100000000000000)
+            return (None, (depth+1)*100000000000)
         else:
-            return (None, -100000000000000)
+            return (None, (depth+1)*-100000000000)
     if depth == 0: # If the depth for depth limit minimax reaches 0
         return (None, score_position(board, AI_PLAYER))
     actions = available_actions(board)
@@ -164,23 +165,30 @@ def minimax (board, depth, alpha, beta, maximizingPlayer):
                 break
         return (bestAction, minEvaluation)
 
+# Colors
 RED_PLAYER = (255, 0, 0)
 YELLOW_PLAYER = (0, 153, 0)
 BACKGROUND_COLOR = (255, 255, 255)
 BOARD_COLOR = (0, 0, 255)
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+
 SQUARE_SIZE = 100
 WIDTH = COL_SIZE*SQUARE_SIZE
 HEIGHT = ROW_SIZE*SQUARE_SIZE + SQUARE_SIZE
 RADIUS = 45
 pygame.init()
 pygame.font.init()
-myfont = pygame.font.SysFont('Comic Sans MS', 60)
-win = pygame.display.set_mode((COL_SIZE*SQUARE_SIZE, ROW_SIZE*SQUARE_SIZE + SQUARE_SIZE))
+
+# Fonts
+myfont = pygame.font.SysFont('OpenSans-Regular.ttf', 60)
+
+win = pygame.display.set_mode((WIDTH, HEIGHT))
 win.fill(BACKGROUND_COLOR)
 pygame.display.update()
 
 def draw_board(board):
-    pygame.draw.rect(win, BOARD_COLOR, (0, 100, WIDTH, ROW_SIZE*SQUARE_SIZE + SQUARE_SIZE))
+    pygame.draw.rect(win, BOARD_COLOR, (0, 100, WIDTH,HEIGHT))
     row_height = 500
     for row in range (ROW_SIZE):
         for col in range (COL_SIZE):
@@ -193,10 +201,52 @@ def draw_board(board):
         row_height -= 200
     pygame.display.update()
 
-def play():
+def choose_player():
+    title = myfont.render("Play Connect 4", True, BLACK)
+    titleRect = title.get_rect()
+    titleRect.center = ((WIDTH / 2), 150)
+    win.blit(title, titleRect)
+    name = myfont.render("Made by Kush Bhagat", True, BLACK)
+    nameRect = name.get_rect()
+    nameRect.center = ((WIDTH/2), 225)
+    win.blit(name, nameRect)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+
+        playXButton = pygame.Rect(WIDTH/2 - 200, 300, 400, 50)
+        playX = myfont.render("FIRST PLAYER", True, WHITE)
+        playXRect = playX.get_rect()
+        playXRect.center = playXButton.center
+        pygame.draw.rect(win, BLACK, playXButton)
+        win.blit(playX, playXRect)
+
+        playOButton = pygame.Rect(WIDTH/2 - 200, 400, 400, 50)
+        playO = myfont.render("SECOND PLAYER", True, WHITE)
+        playORect = playO.get_rect()
+        playORect.center = playOButton.center
+        pygame.draw.rect(win, BLACK, playOButton)
+        win.blit(playO, playORect)
+        pygame.display.update()
+        
+
+        click, _, _ = pygame.mouse.get_pressed()
+        if click == 1:
+            mouse = pygame.mouse.get_pos()
+            if playXButton.collidepoint(mouse):
+                time.sleep(0.2)
+                return HUMAN_PLAYER
+            elif playOButton.collidepoint(mouse):
+                time.sleep(0.2)
+                return AI_PLAYER
+
+
+def play(first_player):
     #Initialize the board and pygame
     board = init_board()
-    turn = AI_PLAYER
+    turn = first_player
     print (board)
 
     while True:
@@ -205,7 +255,7 @@ def play():
         game_over = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return
+                sys.exit()
 
             if event.type == pygame.MOUSEMOTION:
                 pygame.draw.rect(win, BACKGROUND_COLOR, (0,0, WIDTH, SQUARE_SIZE))
@@ -223,7 +273,7 @@ def play():
 
                     if gameover(board) == HUMAN_PLAYER:
                         text = myfont.render('PLAYER 1 WINS!', True, RED_PLAYER)
-                        win.blit(text, (70,10))
+                        win.blit(text, (20,SQUARE_SIZE/2-20))
                         game_over = True
                         break
                     draw_board(board)
@@ -238,12 +288,34 @@ def play():
 
             if gameover(board) == AI_PLAYER:
                 text = myfont.render('PLAYER 2 WINS!', True, YELLOW_PLAYER)
-                win.blit(text, (70,10))
+                win.blit(text, (20,SQUARE_SIZE/2-20))
                 break
             draw_board(board)
             print (board[::-1])
 
     draw_board(board)
     print (board[::-1])
-    pygame.time.wait(3000)
-play()
+
+while True:
+    win.fill(WHITE)
+    first_player = choose_player()
+    win.fill(WHITE)
+    play(first_player)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+        playAgain = pygame.Rect(WIDTH/2 + 25, SQUARE_SIZE/2-25, 300, 50)
+        playAgainText = myfont.render("PLAY AGAIN?", True, WHITE)
+        playAgainRect = playAgainText.get_rect()
+        playAgainRect.center = playAgain.center
+        pygame.draw.rect(win, BLACK, playAgain)
+        win.blit(playAgainText, playAgainRect)
+        pygame.display.update()
+
+        click, _, _ = pygame.mouse.get_pressed()
+        if click == 1:
+            mouse = pygame.mouse.get_pos()
+            if playAgain.collidepoint(mouse):
+                break
+
